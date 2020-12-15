@@ -152,10 +152,10 @@ class GatedGCNLayer(nn.Module):
         )
         
         if batch_norm == True:
-            self.norm1_h = GraphNorm(output_dim)
-            self.norm1_e = GraphNorm(output_dim)
-            self.norm2_h = GraphNorm(output_dim)
-            self.norm2_e = GraphNorm(output_dim)
+            self.norm1_h = nn.BatchNorm1d(output_dim)
+            self.norm1_e = nn.BatchNorm1d(output_dim)
+            self.norm2_h = nn.BatchNorm1d(output_dim)
+            self.norm2_e = nn.BatchNorm1d(output_dim)
 
     def forward(self, g, h, e):
         
@@ -165,8 +165,8 @@ class GatedGCNLayer(nn.Module):
         e_in = e  # for residual connection
         
         if self.batch_norm == True:
-            h = self.norm1_h(g, h, g.batch_num_nodes())  # batch normalization  
-            e = self.norm1_e(g, e, g.batch_num_edges())  # batch normalization
+            h = self.norm1_h(h)  # batch normalization  
+            e = self.norm1_e(e)  # batch normalization
         
         # Linear transformations of nodes and edges
         g.ndata['h']  = h 
@@ -199,8 +199,8 @@ class GatedGCNLayer(nn.Module):
         e_in = e  # for residual connection
         
         if self.batch_norm == True:
-            h = self.norm2_h(g, h, g.batch_num_nodes())  # batch normalization  
-            e = self.norm2_e(g, e, g.batch_num_edges())  # batch normalization 
+            h = self.norm2_h(h)  # batch normalization  
+            e = self.norm2_e(e)  # batch normalization 
         
         # MLPs on updated node and edge features
         h = self.ff_h(h)
@@ -215,7 +215,7 @@ class GatedGCNLayer(nn.Module):
     
 class GraphNorm(nn.Module):
 
-    def __init__(self, hidden_dim):
+    def __init__(self, hidden_dim=64):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(hidden_dim))
         self.bias = nn.Parameter(torch.zeros(hidden_dim))
