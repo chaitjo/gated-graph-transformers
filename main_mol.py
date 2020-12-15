@@ -223,7 +223,7 @@ if __name__ == "__main__":
                         help='Dimensionality of hidden units in GNNs (default: 128)')
     parser.add_argument('--dropout', type=float, default=0.5,
                         help='Dropout ratio (default: 0.5)')
-    parser.add_argument('--pos_enc_dim', type=int, default=-1,
+    parser.add_argument('--pos_enc_dim', type=int, default=10,
                         help='Positional encoding dimension (-1 to disable)')
     parser.add_argument('--pooling', type=str, default='mean',
                         help='Graph pooling operation (mean/sum/max)')
