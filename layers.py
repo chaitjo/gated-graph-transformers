@@ -130,7 +130,7 @@ class GatedGCNLayer(nn.Module):
         if input_dim != output_dim:
             self.residual = False
         
-        # Linear transformations for dense attention mechanism
+        # MLPs for dense attention mechanism
         self.A = nn.Sequential(
             nn.Linear(output_dim, hidden_dim, bias=True),
             nn.ReLU(),
@@ -205,12 +205,8 @@ class GatedGCNLayer(nn.Module):
         # Graph convolution with dense attention mechanism
         g.apply_edges(fn.u_add_v('Ch', 'Dh', 'CDh'))
         g.edata['e'] = g.edata['CDh'] + g.edata['Ee']
-        # Dense attention mechanism
-        g.edata['sigma'] = torch.sigmoid(g.edata['e'])
-        g.update_all(fn.u_mul_e('Bh', 'sigma', 'm'), fn.sum('m', 'sum_sigma_h'))
-        # Gated-Mean aggregation
-        g.update_all(fn.copy_e('sigma', 'm'), fn.sum('m', 'sum_sigma'))
-        g.ndata['h'] = g.ndata['Ah'] + g.ndata['sum_sigma_h'] / (g.ndata['sum_sigma'] + 1e-10)
+        g.update_all(fn.u_mul_e('Bh', 'e', 'm'), fn.sum('m', 'e_Bh'))
+        g.ndata['h'] = g.ndata['Ah'] + g.ndata['e_Bh']
         h = g.ndata['h']  # result of graph convolution
         e = g.edata['e']  # result of graph convolution 
         
