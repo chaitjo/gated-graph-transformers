@@ -136,7 +136,6 @@ class GatedGCNLayer(nn.Module):
         self.C = nn.Linear(input_dim, output_dim, bias=True)
         self.D = nn.Linear(input_dim, output_dim, bias=True)
         self.E = nn.Linear(input_dim, output_dim, bias=True)
-        self.F = nn.Linear(4*output_dim, output_dim, bias=True)
         
         # MLPs for node and edge features
         self.ff_h = nn.Sequential(
@@ -183,18 +182,10 @@ class GatedGCNLayer(nn.Module):
         g.edata['e'] = g.edata['CDh'] + g.edata['Ee']
         # Dense attention mechanism
         g.edata['sigma'] = torch.sigmoid(g.edata['e'])
-        g.apply_edges(fn.u_mul_e('Bh', 'sigma', 'sigma_Bh'))
-        # Gated-Mean-Max-Min aggregation
-        g.update_all(fn.copy_e('sigma_Bh', 'm'), fn.sum('m', 'sum_sigma_Bh'))
-        g.update_all(fn.copy_e('sigma_Bh', 'm'), fn.max('m', 'max_sigma_Bh'))
-        g.update_all(fn.copy_e('sigma_Bh', 'm'), fn.min('m', 'min_sigma_Bh'))
-        g.update_all(fn.copy_e('sigma', 'm'), fn.sum('m', 'sum_sigma'))  # for Mean
-        g.ndata['h'] = g.ndata['Ah'] + self.F(torch.cat([
-            g.ndata['sum_sigma_Bh'],
-            g.ndata['sum_sigma_Bh'] / (g.ndata['sum_sigma'] + 1e-10),
-            g.ndata['max_sigma_Bh'],
-            g.ndata['min_sigma_Bh']
-        ], dim=-1))
+        g.update_all(fn.u_mul_e('Bh', 'sigma', 'm'), fn.sum('m', 'sum_sigma_h'))
+        # Gated-Mean aggregation
+        g.update_all(fn.copy_e('sigma', 'm'), fn.sum('m', 'sum_sigma'))
+        g.ndata['h'] = g.ndata['Ah'] + g.ndata['sum_sigma_h'] / (g.ndata['sum_sigma'] + 1e-10)
         h = g.ndata['h']  # result of graph convolution
         e = g.edata['e']  # result of graph convolution 
         

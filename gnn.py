@@ -48,20 +48,20 @@ class GNN_mol(nn.Module):
                 for _ in range(num_layer) 
         ])
         
-        # self.pooler_h = {
-        #     "mean": AvgPooling(),
-        #     "sum": SumPooling(),
-        #     "max": MaxPooling(),
-        # }.get(graph_pooling, AvgPooling())
+        self.pooler_h = {
+            "mean": AvgPooling(),
+            "sum": SumPooling(),
+            "max": MaxPooling(),
+        }.get(graph_pooling, AvgPooling())
         
-        # self.pooler_e = {
-        #     "mean": AvgPoolingEdges(),
-        #     "sum": SumPoolingEdges(),
-        #     "max": MaxPoolingEdges(),
-        # }.get(graph_pooling, AvgPoolingEdges())
+        self.pooler_e = {
+            "mean": AvgPoolingEdges(),
+            "sum": SumPoolingEdges(),
+            "max": MaxPoolingEdges(),
+        }.get(graph_pooling, AvgPoolingEdges())
         
         self.predictor = nn.Sequential(
-            nn.Linear(6* emb_dim, hidden_dim, bias=True),
+            nn.Linear(2* emb_dim, hidden_dim, bias=True),
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(hidden_dim, num_tasks, bias=True)
@@ -89,14 +89,7 @@ class GNN_mol(nn.Module):
         
         # Graph embedding
         hg = torch.cat(
-            (
-                AvgPooling()(g, h),
-                SumPooling()(g, h),
-                MaxPooling()(g, h), 
-                AvgPoolingEdges()(g, e),
-                SumPoolingEdges()(g, e),
-                MaxPoolingEdges()(g, e),
-            ), 
+            (self.pooler_h(g, h), self.pooler_e(g, e)), 
             dim=-1
         )
         
