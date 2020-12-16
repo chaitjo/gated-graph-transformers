@@ -131,11 +131,36 @@ class GatedGCNLayer(nn.Module):
             self.residual = False
         
         # Linear transformations for dense attention mechanism
-        self.A = nn.Linear(input_dim, output_dim, bias=True)
-        self.B = nn.Linear(input_dim, output_dim, bias=True)
-        self.C = nn.Linear(input_dim, output_dim, bias=True)
-        self.D = nn.Linear(input_dim, output_dim, bias=True)
-        self.E = nn.Linear(input_dim, output_dim, bias=True)
+        self.A = nn.Sequential(
+            nn.Linear(output_dim, hidden_dim, bias=True),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim, bias=True)
+        )
+        self.B = nn.Sequential(
+            nn.Linear(output_dim, hidden_dim, bias=True),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim, bias=True)
+        )
+        self.C = nn.Sequential(
+            nn.Linear(output_dim, hidden_dim, bias=True),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim, bias=True)
+        )
+        self.D = nn.Sequential(
+            nn.Linear(output_dim, hidden_dim, bias=True),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim, bias=True)
+        )
+        self.E = nn.Sequential(
+            nn.Linear(output_dim, hidden_dim, bias=True),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim, bias=True)
+        )
         
         # MLPs for node and edge features
         self.ff_h = nn.Sequential(
