@@ -101,7 +101,7 @@ class GNN_mol(nn.Module):
         batch_index = torch.arange(g.batch_size).long().to(h.device).repeat_interleave(batch_list)
 
         # Node and edge embeddings
-        for layer_idx, conv in enumerate(self.layers):
+        for layer_idx in range(self.num_layer):
             # Add message from virtual node to graph nodes
             h_in = h
             h = h + virtualnode[batch_index]
@@ -109,14 +109,14 @@ class GNN_mol(nn.Module):
                 h = h_in + h
 
             # Graph convolution
-            h, e = conv(g, h, e)
+            h, e = self.layers[layer_idx](g, h, e)
 
             # Update virtual node
             if layer_idx < self.num_layer - 1:
                 # Add message from graph nodes to virtual node
                 virtualnode_in = virtualnode  # for residual connection
                 virtualnode = virtualnode + self.pooler_h(g, h)
-                virtualnode = virtualnode_ff(virtualnode)
+                virtualnode = self.virtualnode_ff[layer_idx](virtualnode)
                 if self.residual == True:
                     virtualnode = virtualnode_in + virtualnode
 
