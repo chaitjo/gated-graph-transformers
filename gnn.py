@@ -96,14 +96,15 @@ class GNN_mol(nn.Module):
             h = h + self.pos_encoder_h(pe_h)
         
         # Initialize virtual node
-        virtualnode = self.virtualnode_emb(torch.zeros(g.batch_size()).long().to(h.device))
+        virtualnode = self.virtualnode_emb(torch.zeros(g.batch_size).long().to(h.device))
         batch_list = g.batch_num_nodes().long().to(h.device)
+        batch_index = torch.arange(g.batch_size).long().to(h.device).repeat_interleave(batch_list)
 
         # Node and edge embeddings
         for layer_idx, conv in enumerate(self.layers):
             # Add message from virtual node to graph nodes
             h_in = h
-            h = h + virtualnode[batch_list]
+            h = h + virtualnode[batch_index]
             if self.residual == True:
                 h = h_in + h
 
