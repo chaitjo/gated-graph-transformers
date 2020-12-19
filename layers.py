@@ -70,8 +70,14 @@ class GCNLayer(nn.Module):
         self.A = nn.Linear(input_dim, output_dim, bias=True)
         self.B = nn.Linear(input_dim, output_dim, bias=True)
         
-        # MLPs for node features
+        # MLPs for node and edge features
         self.ff_h = nn.Sequential(
+            nn.Linear(output_dim, hidden_dim, bias=True),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim, bias=True)
+        )
+        self.ff_e = nn.Sequential(
             nn.Linear(output_dim, hidden_dim, bias=True),
             nn.ReLU(),
             nn.Dropout(dropout),
@@ -81,6 +87,7 @@ class GCNLayer(nn.Module):
         if batch_norm == True:
             self.norm1_h = nn.BatchNorm1d(output_dim)
             self.norm2_h = nn.BatchNorm1d(output_dim)
+            self.norm_e = nn.BatchNorm1d(output_dim)
             
     def forward(self, g, h, e):
         
@@ -96,7 +103,7 @@ class GCNLayer(nn.Module):
         g.ndata['Ah'] = self.A(h)  # node update, self-connection
         g.ndata['Bh'] = self.B(h)  # node update, neighbor projection
         
-        # Graph convolution with dense attention mechanism
+        # Graph convolution
         g.update_all(fn.copy_u('Bh', 'm'), fn.mean('m', 'neigh'))
         h = g.ndata['Ah'] + g.ndata['neigh']
         
@@ -106,15 +113,19 @@ class GCNLayer(nn.Module):
         ############ Feedforward sub-layer ############
         
         h_in = h  # for residual connection
+        e_in = e  # for residual connection
         
         if self.batch_norm == True:
-            h = self.norm2_h(h)  # batch normalization  
+            h = self.norm2_h(h)  # batch normalization 
+            e = self.norm_e(e)  # batch normalization 
         
-        # MLPs on updated node features
+        # MLPs on updated node and edge features
         h = self.ff_h(h)
+        e = self.ff_e(e)
         
         if self.residual == True:
             h = h_in + h  # residual connection
+            e = e_in + e  # residual connection
         
         return h, e
 
