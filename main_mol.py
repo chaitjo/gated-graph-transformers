@@ -143,8 +143,8 @@ def main(args):
     log_dir = os.path.join(
             "logs",
             args.dataset,
-            f"{args.expt_name}-{args.gnn}-L{args.num_layer}-h{args.emb_dim}-d{args.dropout}-LR{args.lr}-GPU{args.device}", 
-            start_time_str
+            f"{args.expt_name}-{args.gnn}-L{args.num_layer}-h{args.emb_dim}-d{args.dropout}-LR{args.lr}", 
+            f"{start_time_str}-GPU{args.device}"
     )
     tb_logger = SummaryWriter(log_dir)
     
@@ -198,7 +198,8 @@ def main(args):
         'Validation': valid_curve[best_val_epoch], 
         'Test': test_curve[best_val_epoch], 
         'Train': train_curve[best_val_epoch], 
-        'BestTrain': best_train
+        'BestTrain': best_train,
+        'args': args
     }, os.path.join(log_dir, "results.pt"))
 
 

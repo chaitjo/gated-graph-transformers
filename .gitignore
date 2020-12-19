@@ -1,4 +1,5 @@
 # Custom
+*.vscode
 *.ipynb
 dataset/
 logs/
