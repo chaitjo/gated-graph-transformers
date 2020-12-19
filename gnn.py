@@ -91,10 +91,11 @@ class GNN_mol(nn.Module):
         if self.pos_enc_dim > 0: # if 'pos_enc' in g.ntypes:
             # Add positional encodings
             pe_h = g.ndata['pos_enc'].to(h.device)
-            # Add random sign flipping for PEs
-            sign_flip = torch.randint(low=0, high=2, size=(1, pe_h.size(1)), device=pe_h.device)
-            sign_flip[sign_flip==0.0] = -1
-            pe_h = pe_h * sign_flip
+            if self.training:
+                # Add random sign flipping for PEs during training
+                sign_flip = torch.randint(low=0, high=2, size=(1, pe_h.size(1)), device=pe_h.device)
+                sign_flip[sign_flip==0.0] = -1
+                pe_h = pe_h * sign_flip
             h = h + self.pos_encoder_h(pe_h)
         
         if self.virtualnode:
