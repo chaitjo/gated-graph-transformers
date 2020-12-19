@@ -4,133 +4,14 @@ import torch.nn.functional as F
 
 import dgl
 import dgl.function as fn
-
-
-class MLPLayer(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim, 
-                 dropout=0.0, batch_norm=True, residual=True, **kwargs):
-        super().__init__()
-        self.dropout = dropout
-        self.batch_norm = batch_norm
-        self.residual = residual
-        
-        if input_dim != output_dim:
-            self.residual = False
-        
-        # MLPs for node and edge features
-        self.ff_h = nn.Sequential(
-            nn.Linear(output_dim, hidden_dim, bias=True),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_dim, output_dim, bias=True)
-        )
-        self.ff_e = nn.Sequential(
-            nn.Linear(output_dim, hidden_dim, bias=True),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_dim, output_dim, bias=True)
-        )
-        
-        if batch_norm == True:
-            self.norm_h = nn.BatchNorm1d(output_dim)
-            self.norm_e = nn.BatchNorm1d(output_dim)
-
-    def forward(self, g, h, e):
-        
-        h_in = h  # for residual connection
-        e_in = e  # for residual connection
-        
-        if self.batch_norm == True:
-            h = self.norm_h(h)  # batch normalization  
-            e = self.norm_e(e)  # batch normalization 
-        
-        # MLPs on updated node and edge features
-        h = self.ff_h(h)
-        e = self.ff_e(e)
-        
-        if self.residual == True:
-            h = h_in + h  # residual connection
-            e = e_in + e  # residual connection
-        
-        return h, e
     
-    
-class GCNLayer(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim, 
-                 dropout=0.0, batch_norm=True, residual=True, **kwargs):
-        super().__init__()
-        self.dropout = dropout
-        self.batch_norm = batch_norm
-        self.residual = residual
-        
-        if input_dim != output_dim:
-            self.residual = False
-        
-        # Linear transformations
-        self.A = nn.Linear(input_dim, output_dim, bias=True)
-        self.B = nn.Linear(input_dim, output_dim, bias=True)
-        
-        # MLPs for node and edge features
-        self.ff_h = nn.Sequential(
-            nn.Linear(output_dim, hidden_dim, bias=True),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_dim, output_dim, bias=True)
-        )
-        self.ff_e = nn.Sequential(
-            nn.Linear(output_dim, hidden_dim, bias=True),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_dim, output_dim, bias=True)
-        )
-        
-        if batch_norm == True:
-            self.norm1_h = nn.BatchNorm1d(output_dim)
-            self.norm2_h = nn.BatchNorm1d(output_dim)
-            self.norm_e = nn.BatchNorm1d(output_dim)
-            
-    def forward(self, g, h, e):
-        
-        ########## Message-passing sub-layer ##########
-        
-        h_in = h  # for residual connection
-        
-        if self.batch_norm == True:
-            h = self.norm1_h(h)  # batch normalization  
-            
-        # Linear transformations of nodes and edges
-        g.ndata['h']  = h 
-        g.ndata['Ah'] = self.A(h)  # node update, self-connection
-        g.ndata['Bh'] = self.B(h)  # node update, neighbor projection
-        
-        # Graph convolution
-        g.update_all(fn.copy_u('Bh', 'm'), fn.mean('m', 'neigh'))
-        h = g.ndata['Ah'] + g.ndata['neigh']
-        
-        if self.residual == True:
-            h = h_in + h  # residual connection
-           
-        ############ Feedforward sub-layer ############
-        
-        h_in = h  # for residual connection
-        e_in = e  # for residual connection
-        
-        if self.batch_norm == True:
-            h = self.norm2_h(h)  # batch normalization 
-            e = self.norm_e(e)  # batch normalization 
-        
-        # MLPs on updated node and edge features
-        h = self.ff_h(h)
-        e = self.ff_e(e)
-        
-        if self.residual == True:
-            h = h_in + h  # residual connection
-            e = e_in + e  # residual connection
-        
-        return h, e
-
 
 class GatedGCNLayer(nn.Module):
+    """
+    Gated Graph Convolution layer with a dense attention mechanism from "Benchmarking Graph Neural Networks" (https://arxiv.org/abs/2003.00982).
+
+    Implemented within a Transformer block backbone.
+    """
     def __init__(self, input_dim, output_dim, hidden_dim, 
                  dropout=0.0, batch_norm=True, residual=True, **kwargs):
         super().__init__()
@@ -223,10 +104,152 @@ class GatedGCNLayer(nn.Module):
         
         return h, e
 
+
+class GCNLayer(nn.Module):
+    """
+    Basic Graph Convolution layer from "Semi-Supervised Classification with Graph Convolutional Networks" (https://arxiv.org/abs/1609.02907).
+
+    Implemented within a Transformer block backbone.
+    """
+    def __init__(self, input_dim, output_dim, hidden_dim, 
+                 dropout=0.0, batch_norm=True, residual=True, **kwargs):
+        super().__init__()
+        self.dropout = dropout
+        self.batch_norm = batch_norm
+        self.residual = residual
+        
+        if input_dim != output_dim:
+            self.residual = False
+        
+        # Linear transformations for graph convolution
+        self.A = nn.Linear(input_dim, output_dim, bias=True)
+        self.B = nn.Linear(input_dim, output_dim, bias=True)
+        
+        # MLPs for node and edge features
+        self.ff_h = nn.Sequential(
+            nn.Linear(output_dim, hidden_dim, bias=True),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim, bias=True)
+        )
+        self.ff_e = nn.Sequential(
+            nn.Linear(output_dim, hidden_dim, bias=True),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim, bias=True)
+        )
+        
+        if batch_norm == True:
+            self.norm1_h = nn.BatchNorm1d(output_dim)
+            self.norm2_h = nn.BatchNorm1d(output_dim)
+            self.norm_e = nn.BatchNorm1d(output_dim)
+            
+    def forward(self, g, h, e):
+        
+        ########## Message-passing sub-layer ##########
+        
+        h_in = h  # for residual connection
+        
+        if self.batch_norm == True:
+            h = self.norm1_h(h)  # batch normalization  
+            
+        # Linear transformations of nodes and edges
+        g.ndata['h']  = h 
+        g.ndata['Ah'] = self.A(h)  # node update, self-connection
+        g.ndata['Bh'] = self.B(h)  # node update, neighbor projection
+        
+        # Graph convolution
+        g.update_all(fn.copy_u('Bh', 'm'), fn.mean('m', 'neigh'))
+        h = g.ndata['Ah'] + g.ndata['neigh']
+        
+        if self.residual == True:
+            h = h_in + h  # residual connection
+           
+        ############ Feedforward sub-layer ############
+        
+        h_in = h  # for residual connection
+        e_in = e  # for residual connection
+        
+        if self.batch_norm == True:
+            h = self.norm2_h(h)  # batch normalization 
+            e = self.norm_e(e)  # batch normalization 
+        
+        # MLPs on updated node and edge features
+        h = self.ff_h(h)
+        e = self.ff_e(e)
+        
+        if self.residual == True:
+            h = h_in + h  # residual connection
+            e = e_in + e  # residual connection
+        
+        return h, e
+
+
+class MLPLayer(nn.Module):
+    """
+    Graph-agnostic MLP layer on node and edge features. Useful sanity check for GNNs!
+    """
+    def __init__(self, input_dim, output_dim, hidden_dim, 
+                 dropout=0.0, batch_norm=True, residual=True, **kwargs):
+        super().__init__()
+        self.dropout = dropout
+        self.batch_norm = batch_norm
+        self.residual = residual
+        
+        if input_dim != output_dim:
+            self.residual = False
+        
+        # MLPs for node and edge features
+        self.ff_h = nn.Sequential(
+            nn.Linear(output_dim, hidden_dim, bias=True),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim, bias=True)
+        )
+        self.ff_e = nn.Sequential(
+            nn.Linear(output_dim, hidden_dim, bias=True),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim, bias=True)
+        )
+        
+        if batch_norm == True:
+            self.norm_h = nn.BatchNorm1d(output_dim)
+            self.norm_e = nn.BatchNorm1d(output_dim)
+
+    def forward(self, g, h, e):
+        
+        h_in = h  # for residual connection
+        e_in = e  # for residual connection
+        
+        if self.batch_norm == True:
+            h = self.norm_h(h)  # batch normalization  
+            e = self.norm_e(e)  # batch normalization 
+        
+        # MLPs on updated node and edge features
+        h = self.ff_h(h)
+        e = self.ff_e(e)
+        
+        if self.residual == True:
+            h = h_in + h  # residual connection
+            e = e_in + e  # residual connection
+        
+        return h, e
+
     
 class GraphNorm(nn.Module):
+    """
+    Graph batch normalization layer from "GraphNorm: A Principled Approach to Accelerating Graph Neural Network Training" (https://arxiv.org/abs/2009.03294).
 
-    def __init__(self, hidden_dim=64):
+    Example usage as a replacement for BatchNorm over nodes `h` and edges `e` in graph `g`:
+    ```
+    norm_h = GraphNorm(output_dim)
+    norm_e = GraphNorm(output_dim)
+    h = norm_h(g, h, g.batch_num_nodes())
+    e = norm_e(g, e, g.batch_num_edges())
+    ```
+    """
+    def __init__(self, hidden_dim):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(hidden_dim))
         self.bias = nn.Parameter(torch.zeros(hidden_dim))
