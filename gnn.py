@@ -13,8 +13,9 @@ from layers import *
 class GNN_mol(nn.Module):
     
     def __init__(self, gnn_type, num_tasks, 
-                 num_layer=5, emb_dim=128, dropout=0.5, batch_norm=True, 
-                 residual=True, pos_enc_dim=10, graph_pooling="mean"):
+                 num_layer=5, emb_dim=128, dropout=0.5, 
+                 batch_norm=True, residual=True, pos_enc_dim=10, 
+                 graph_pooling="mean", virtualnode=False):
         super().__init__()
         
         self.num_tasks = num_tasks
@@ -25,7 +26,8 @@ class GNN_mol(nn.Module):
         self.residual = residual
         self.pos_enc_dim = pos_enc_dim
         self.graph_pooling = graph_pooling
-        
+        self.virtualnode = virtualnode
+
         hidden_dim = 4* emb_dim
         self.hidden_dim = hidden_dim
         
@@ -48,20 +50,20 @@ class GNN_mol(nn.Module):
                 for _ in range(num_layer) 
         ])
 
-        self.virtualnode_emb = torch.nn.Embedding(1, emb_dim)
-        torch.nn.init.constant_(self.virtualnode_emb.weight.data, 0)
-
-        self.virtualnode_ff = nn.ModuleList([
-            nn.Sequential(
-                nn.BatchNorm1d(emb_dim),
-                nn.Linear(emb_dim, hidden_dim, bias=True),
-                nn.ReLU(),
-                nn.Dropout(dropout),
-                nn.Linear(hidden_dim, emb_dim, bias=True)
-            ) 
-                for _ in range(num_layer - 1) 
-        ])
-        
+        if self.virtualnode:
+            self.virtualnode_emb = torch.nn.Embedding(1, emb_dim)
+            torch.nn.init.constant_(self.virtualnode_emb.weight.data, 0)
+            self.virtualnode_ff = nn.ModuleList([
+                nn.Sequential(
+                    nn.BatchNorm1d(emb_dim),
+                    nn.Linear(emb_dim, hidden_dim, bias=True),
+                    nn.ReLU(),
+                    nn.Dropout(dropout),
+                    nn.Linear(hidden_dim, emb_dim, bias=True)
+                ) 
+                    for _ in range(num_layer - 1) 
+            ])
+            
         self.pooler_h = {
             "mean": AvgPooling(),
             "sum": SumPooling(),
@@ -95,24 +97,25 @@ class GNN_mol(nn.Module):
             pe_h = pe_h * sign_flip
             h = h + self.pos_encoder_h(pe_h)
         
-        # Initialize virtual node
-        virtualnode = self.virtualnode_emb(torch.zeros(g.batch_size).long().to(h.device))
-        batch_list = g.batch_num_nodes().long().to(h.device)
-        batch_index = torch.arange(g.batch_size).long().to(h.device).repeat_interleave(batch_list)
+        if self.virtualnode:
+            # Initialize virtual node
+            vn_h = self.virtualnode_emb(torch.zeros(g.batch_size).long().to(h.device))
+            batch_list = g.batch_num_nodes().long().to(h.device)
+            batch_index = torch.arange(g.batch_size).long().to(h.device).repeat_interleave(batch_list)
 
         # Node and edge embeddings
         for layer_idx in range(self.num_layer):
-            # Add message from virtual node to graph nodes
-            h = h + virtualnode[batch_index]
+            if self.virtualnode:
+                # Add message from virtual node to graph nodes
+                h = h + vn_h[batch_index]
 
             # Graph convolution
             h, e = self.layers[layer_idx](g, h, e)
 
-            # Update virtual node
-            if layer_idx < self.num_layer - 1:
+            if self.virtualnode and layer_idx < self.num_layer - 1:
                 # Add message from graph nodes to virtual node
-                virtualnode = virtualnode + self.pooler_h(g, h)
-                virtualnode = self.virtualnode_ff[layer_idx](virtualnode)
+                vn_h = vn_h + self.pooler_h(g, h)
+                vn_h = self.virtualnode_ff[layer_idx](vn_h)
 
         g.ndata['h'] = h
         g.edata['e'] = e

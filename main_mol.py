@@ -118,7 +118,8 @@ def main(args):
     if args.gnn in ['gated-gcn', 'gcn', 'mlp']:
         model = GNN_mol(gnn_type=args.gnn, num_tasks=dataset.num_tasks, num_layer=args.num_layer, 
                         emb_dim=args.emb_dim, dropout=args.dropout, batch_norm=True, 
-                        residual=True, pos_enc_dim=args.pos_enc_dim, graph_pooling=args.pooling)
+                        residual=True, pos_enc_dim=args.pos_enc_dim, graph_pooling=args.pooling, 
+                        virtualnode=args.virtualnode)
         model.to(device)
         print(model)
         total_param = 0
@@ -227,6 +228,8 @@ if __name__ == "__main__":
                         help='Positional encoding dimension (-1 to disable)')
     parser.add_argument('--pooling', type=str, default='mean',
                         help='Graph pooling operation (mean/sum/max)')
+    parser.add_argument('--virtualnode', action='store_true',
+                        help='Add virtual node during message-passing')
     # Training and LR settings
     parser.add_argument('--batch_size', type=int, default=256,
                         help='Input batch size for training (default: 256)')
