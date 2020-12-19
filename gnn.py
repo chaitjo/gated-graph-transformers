@@ -103,10 +103,7 @@ class GNN_mol(nn.Module):
         # Node and edge embeddings
         for layer_idx in range(self.num_layer):
             # Add message from virtual node to graph nodes
-            h_in = h
             h = h + virtualnode[batch_index]
-            if self.residual == True:
-                h = h_in + h
 
             # Graph convolution
             h, e = self.layers[layer_idx](g, h, e)
@@ -114,11 +111,8 @@ class GNN_mol(nn.Module):
             # Update virtual node
             if layer_idx < self.num_layer - 1:
                 # Add message from graph nodes to virtual node
-                virtualnode_in = virtualnode  # for residual connection
                 virtualnode = virtualnode + self.pooler_h(g, h)
                 virtualnode = self.virtualnode_ff[layer_idx](virtualnode)
-                if self.residual == True:
-                    virtualnode = virtualnode_in + virtualnode
 
         g.ndata['h'] = h
         g.edata['e'] = e
