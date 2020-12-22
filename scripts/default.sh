@@ -5,13 +5,13 @@ dataset=ogbg-molhiv
 expt=default
 
 gnn=gated-gcn
-num_layer=3
-emb_dim=128
+num_layer=2
+emb_dim=64
 pos_enc_dim=-1
 pooling='mean'
 
-batch_size=16
-epochs=5
+batch_size=256
+epochs=2
 lr=1e-3
 
 seed0=0

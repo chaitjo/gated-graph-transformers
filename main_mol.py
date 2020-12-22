@@ -13,9 +13,9 @@ import numpy as np
 
 from ogb.graphproppred import DglGraphPropPredDataset, Evaluator
 
-from gnn import GNN_mol
 from utils import collate_dgl, add_positional_encoding
 
+from gnn import GNN_mol
 
 cls_criterion = torch.nn.BCEWithLogitsLoss()
 
@@ -108,11 +108,11 @@ def main(args):
 
     # Prepare dataloaders
     train_loader = DataLoader(dataset[split_idx["train"]], batch_size=args.batch_size, shuffle=True, 
-                              num_workers = args.num_workers, collate_fn=collate_dgl)
+                              num_workers=args.num_workers, collate_fn=collate_dgl)
     valid_loader = DataLoader(dataset[split_idx["valid"]], batch_size=args.batch_size, shuffle=False, 
-                              num_workers = args.num_workers, collate_fn=collate_dgl)
+                              num_workers=args.num_workers, collate_fn=collate_dgl)
     test_loader = DataLoader(dataset[split_idx["test"]], batch_size=args.batch_size, shuffle=False, 
-                             num_workers = args.num_workers, collate_fn=collate_dgl)
+                             num_workers=args.num_workers, collate_fn=collate_dgl)
     
     # Initialize model, optimizer and scheduler
     if args.gnn in ['gated-gcn', 'gcn', 'mlp']:
@@ -194,18 +194,20 @@ def main(args):
     print('Test score: {}'.format(test_curve[best_val_epoch]))
 
     torch.save({
+        'args': args,
+        'model': model.__repr__,
+        'total_param': total_param,
         'BestEpoch': best_val_epoch,
         'Validation': valid_curve[best_val_epoch], 
-        'Test': test_curve[best_val_epoch], 
+        'Test': test_curve[best_val_epoch],
         'Train': train_curve[best_val_epoch], 
         'BestTrain': best_train,
-        'args': args
     }, os.path.join(log_dir, "results.pt"))
 
 
 if __name__ == "__main__":
     # Experiment settings
-    parser = argparse.ArgumentParser(description='GNN baselines on ogbgmol* data with DGL')
+    parser = argparse.ArgumentParser(description='Train GNNs on ogbgmol* data with DGL')
     parser.add_argument('--dataset', type=str, default="ogbg-molhiv",
                         help='Dataset name (default: ogbg-molhiv)')
     parser.add_argument('--device', type=int, default=0,
