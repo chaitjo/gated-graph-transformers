@@ -1,6 +1,7 @@
 # :rocket: Gated Graph Transformers
 
 >**Gated Graph Transformers** for graph-level property prediction, *i.e.* graph classification and regression.
+>Blogpost: [*Transformers are Graph Neural Networks*](https://thegradient.pub/transformers-are-graph-neural-networks/), by [Chaitanya K. Joshi](http://www.chaitjo.com/), published with [*The Gradient*](https://thegradient.pub/).
 
 This repository is my attempt to build intuitions about and track progress in **Graph Representation Learning** research. 
 I aim to develop the most universal and powerful model which unifies state-of-the-art ideas and architectures from **Graph Neural Networks** and **Transformers**, without incorporating domain-specific tricks.
@@ -10,7 +11,7 @@ I aim to develop the most universal and powerful model which unifies state-of-th
 ## Key Architectural Ideas
 
 - :robot: **Deep, Residual Transformer Backbone** 
-  - As the backbone architecture, I borrow the two-sub-layered, pre-normalization variant of Transformer encoders that has emerged as the standard in the NLP community, e.g. [GPT-3](https://arxiv.org/abs/2005.14165). Each Transformer block consists of a **message-passing sub-layer** followed by a **node-wise feedforward sub-layer**. The graph convolution is described later. 
+  - As the backbone architecture, I borrow the [two-sub-layered, pre-normalization variant](https://arxiv.org/abs/2002.04745) of Transformer encoders that has emerged as the standard in the NLP community, e.g. [GPT-3](https://arxiv.org/abs/2005.14165). Each Transformer block consists of a **message-passing sub-layer** followed by a **node-wise feedforward sub-layer**. The graph convolution is described later. 
   - The feedforward sub-layer projects node embeddings to an *absurdly* large dimension, passes them through a non-linear activation function, does dropout, and reduces back to the original embedding dimension.
   - The Transformer backbone enables training very **deep** and extremely **overparameterized** models. Overparameterization is [important for performance in NLP](https://arxiv.org/abs/1910.10683) and other combinatorially large domains, but was previously not possible for GNNs trained on small graph classifcation datasets. Coupled with unique node positional encodings (described later) and the feedforward sub-layer, overparameterization ensures that our GNN is **Turing Universal** (based on A. Loukas's recent insightful work, including [this paper](https://arxiv.org/abs/1907.03199)).
 
@@ -21,7 +22,7 @@ I aim to develop the most universal and powerful model which unifies state-of-th
   - I am evidently partial to this graph convlution layer. At the same time, it is worth noting that anisotropic local aggregations and generalizations of directed CNN filters have demonstrated strong performance across a myriad of applications, including [**3D point clouds**](https://arxiv.org/abs/1904.07601), [drug discovery](https://pubs.acs.org/doi/abs/10.1021/acs.jcim.9b00237), [**material science**](https://openreview.net/forum?id=K3qa-sMHpQX), and [programming languages](https://arxiv.org/abs/1906.12192).
 
 - :arrows_counterclockwise: **Graph Positional Encodings** 
-  - I use the top-*k* non-trivial **Laplacian Eigenvectors** as unique node identifiers to inject structural/positional priors into the Transformer backbone. This can be seen as a generalization of sinusoidal positional encodings from the original Transformers, and was concurrently proposed in the Benchmarking GNNs, [EigenGNNs](https://arxiv.org/abs/2006.04330), and [GCC](https://arxiv.org/abs/2006.09963) papers.
+  - I use the top-*k* non-trivial **Laplacian Eigenvectors** as unique node identifiers to inject structural/positional priors into the Transformer backbone. Laplacian Eigenvectors are a generalization of sinusoidal positional encodings from the original Transformers, and were concurrently proposed in the Benchmarking GNNs, [EigenGNNs](https://arxiv.org/abs/2006.04330), and [GCC](https://arxiv.org/abs/2006.09963) papers.
   - Randomly flipping the sign of Laplacian Eigenvectors during training (due to symmetry) can be seen as an additional **data augmentation** or **regularization technique**, helping delay overfitting to training patterns. Going further, the [Directional Graph Networks](https://arxiv.org/abs/2010.02863) paper presents a more principled approach for using Laplacian Eigenvectors.
 
 ---
@@ -60,3 +61,14 @@ python submit.py --dataset [ogbg-molhiv/ogbg-molpcba] --expt [path-to-logs]
 ```
 
 Note: The code was tested on Ubuntu 16.04, using Python 3.6, PyTorch 1.6 and CUDA 10.1.
+
+## Citation
+```
+@article{joshi2020transformers,
+author = {Joshi, Chaitanya},
+title = {Transformers are Graph Neural Networks},
+journal = {The Gradient},
+year = {2020},
+howpublished = {\url{https://thegradient.pub/transformers-are-gaph-neural-networks/ } },
+}
+```
