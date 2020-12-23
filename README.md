@@ -1,7 +1,8 @@
 # :rocket: Gated Graph Transformers
 
 >**Gated Graph Transformers** for graph-level property prediction, *i.e.* graph classification and regression.
->Blogpost: [*Transformers are Graph Neural Networks*](https://thegradient.pub/transformers-are-graph-neural-networks/), by [Chaitanya K. Joshi](http://www.chaitjo.com/), published with [*The Gradient*](https://thegradient.pub/).
+>
+>Associated blogpost: [*Transformers are Graph Neural Networks*](https://thegradient.pub/transformers-are-graph-neural-networks/), by [Chaitanya K. Joshi](http://www.chaitjo.com/), published with [*The Gradient*](https://thegradient.pub/).
 
 This repository is my attempt to build intuitions about and track progress in **Graph Representation Learning** research. 
 I aim to develop the most universal and powerful model which unifies state-of-the-art ideas and architectures from **Graph Neural Networks** and **Transformers**, without incorporating domain-specific tricks.
@@ -65,10 +66,10 @@ Note: The code was tested on Ubuntu 16.04, using Python 3.6, PyTorch 1.6 and CUD
 ## Citation
 ```
 @article{joshi2020transformers,
-author = {Joshi, Chaitanya},
-title = {Transformers are Graph Neural Networks},
-journal = {The Gradient},
-year = {2020},
-howpublished = {\url{https://thegradient.pub/transformers-are-gaph-neural-networks/ } },
+  author = {Joshi, Chaitanya},
+  title = {Transformers are Graph Neural Networks},
+  journal = {The Gradient},
+  year = {2020},
+  howpublished = {\url{https://thegradient.pub/transformers-are-gaph-neural-networks/ } },
 }
 ```
