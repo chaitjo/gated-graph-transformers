@@ -35,7 +35,12 @@ class GNN_mol(nn.Module):
         self.bond_encoder = BondEncoder(emb_dim)
         
         if self.pos_enc_dim > 0:
-            self.pos_encoder_h = nn.Linear(pos_enc_dim, emb_dim, bias=True)
+            self.pos_encoder_h = nn.Sequential(
+                nn.Linear(emb_dim + pos_enc_dim, hidden_dim, bias=True),
+                nn.ReLU(),
+                nn.Dropout(dropout),
+                nn.Linear(hidden_dim, emb_dim, bias=True)
+            )
         
         gnn_layer = {
             'gated-gcn': GatedGCNLayer,
@@ -96,7 +101,7 @@ class GNN_mol(nn.Module):
                 sign_flip = torch.randint(low=0, high=2, size=(1, pe_h.size(1)), device=pe_h.device)
                 sign_flip[sign_flip==0.0] = -1
                 pe_h = pe_h * sign_flip
-            h = h + self.pos_encoder_h(pe_h)
+            h = self.pos_encoder_h(torch.cat((h, pe_h), dim=-1))
         
         if self.virtualnode:
             # Initialize virtual node

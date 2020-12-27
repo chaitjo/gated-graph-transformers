@@ -36,5 +36,5 @@ if __name__ == "__main__":
 
     print(f'Test performance: {np.mean(Test)} +- {np.std(Test)}')
     print(f'Validation performance: {np.mean(Validation)} +- {np.std(Validation)}')
-    print(f'Test performance: {np.mean(Train)} +- {np.std(Train)}')
+    print(f'Train performance: {np.mean(Train)} +- {np.std(Train)}')
     print(f'Total parameters: {int(np.mean(total_param))}')

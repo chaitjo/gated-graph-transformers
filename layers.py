@@ -75,8 +75,8 @@ class GatedGCNLayer(nn.Module):
         # Dense attention mechanism
         g.edata['sigma'] = torch.sigmoid(g.edata['e'])
         g.update_all(fn.u_mul_e('Bh', 'sigma', 'm'), fn.sum('m', 'sum_sigma_h'))
-        # Gated-Mean aggregation
         g.update_all(fn.copy_e('sigma', 'm'), fn.sum('m', 'sum_sigma'))
+        # Gated-Mean aggregation
         g.ndata['h'] = g.ndata['Ah'] + g.ndata['sum_sigma_h'] / (g.ndata['sum_sigma'] + 1e-10)
         h = g.ndata['h']  # result of graph convolution
         e = g.edata['e']  # result of graph convolution 
